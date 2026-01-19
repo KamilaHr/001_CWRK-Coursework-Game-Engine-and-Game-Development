@@ -49,7 +49,7 @@ namespace OpenGL_Game.OBJLoader
                 foreach (var group in obj.Groups)
                 {
                     Group newGroup = new Group();
-                    if (group.Material.DiffuseTextureMap != null)
+                    if (group.Material != null && group.Material.DiffuseTextureMap != null)
                     {
                         // Q: Does the DiffuseTextureMap have a full folder path?
                         int index = group.Material.DiffuseTextureMap.LastIndexOf('\\');
@@ -69,6 +69,7 @@ namespace OpenGL_Game.OBJLoader
                     {
                         newGroup.texture = ResourceManager.LoadTexture("Geometry\\Default\\default.png");
                     }
+
                     bool error = false;
                     string errorMessage = "";
                     bool primitiveSet = false;
@@ -161,7 +162,14 @@ namespace OpenGL_Game.OBJLoader
                     }
 
                     // Diffuse colour
-                    newGroup.diffuse = new Vector3(group.Material.DiffuseColor.X, group.Material.DiffuseColor.Y, group.Material.DiffuseColor.Z); ;
+                    if (group.Material != null)
+                    {
+                        newGroup.diffuse = new Vector3(group.Material.DiffuseColor.X, group.Material.DiffuseColor.Y, group.Material.DiffuseColor.Z); ;
+                    }
+                    else
+                    {
+                        newGroup.diffuse = new Vector3(1.0f, 1.0f, 1.0f);
+                    }
 
                     groups.Add(newGroup);
                     GL.BindVertexArray(0);

@@ -5,6 +5,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Audio.OpenAL; // NEW for Audio
+using System.Diagnostics;
 
 namespace OpenGL_Game.Managers
 {
@@ -44,7 +45,8 @@ namespace OpenGL_Game.Managers
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
             base.OnKeyDown(e);
-            if (e.Key == Keys.Escape) this.Close();
+            //if (e.Key == Keys.Escape) this.Close();
+            Debug.WriteLine($"Key Down: {e.Key}");
             if (keyboardDownDelegate != null) keyboardDownDelegate.Invoke(e);
         }
 
@@ -78,6 +80,7 @@ namespace OpenGL_Game.Managers
             GUI.SetUpGUI(width, height);
 
             StartMenu();
+            this.Focus();
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -101,12 +104,14 @@ namespace OpenGL_Game.Managers
         {
             if(scene != null) scene.Close();
             scene = new GameScene(this);
+            this.Focus();
         }
 
         public void StartMenu()
         {
             if (scene != null) scene.Close();
             scene = new MainMenuScene(this);
+            this.Focus();
         }
 
         public static int WindowWidth

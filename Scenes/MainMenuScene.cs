@@ -21,8 +21,21 @@ namespace OpenGL_Game.Scenes
             sceneManager.updater = Update;
 
             sceneManager.mouseDelegate += Mouse_BottonPressed;
+            sceneManager.keyboardDownDelegate += Keyboard_KeyDown;
 
             GL.ClearColor(0.2f, 0.75f, 1.0f, 1.0f);
+        }
+
+        private void Keyboard_KeyDown(KeyboardKeyEventArgs e)
+        {
+            if (e.Key == Keys.Enter)
+            {
+                sceneManager.StartNewGame();
+            }
+            else if (e.Key == Keys.Escape)
+            {
+                sceneManager.Close();
+            }
         }
 
         public override void Update(FrameEventArgs e)
@@ -89,6 +102,7 @@ namespace OpenGL_Game.Scenes
         public override void Close()
         {
             sceneManager.mouseDelegate -= Mouse_BottonPressed;
+            sceneManager.keyboardDownDelegate -= Keyboard_KeyDown;
         }
     }
 }
