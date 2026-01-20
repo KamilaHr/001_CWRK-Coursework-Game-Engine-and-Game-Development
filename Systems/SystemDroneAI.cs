@@ -1,57 +1,96 @@
 ﻿using OpenGL_Game.Components;
 using OpenGL_Game.Objects;
+using OpenGL_Game.Scenes;
+using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using OpenTK.Mathematics;
+
 namespace OpenGL_Game.Systems
 {
     class SystemDroneAI : System
     {
-        private Scenes.GameScene game;
+        const ComponentTypes MASK =
+            ComponentTypes.COMPONENT_POSITION | ComponentTypes.COMPONENT_DRONE_AI;
 
-        public SystemDroneAI(Scenes.GameScene gameScene)
+        private readonly GameScene scene;
+
+        public SystemDroneAI(GameScene scene)
         {
-            game = gameScene;
+            this.scene = scene;
         }
 
         public override void OnAction(Entity entity)
         {
-            ComponentDroneAI ai = null;
-            ComponentPosition pos = null;
+            if ((entity.Mask & MASK) != MASK) return;
+            if (scene.AIFrozen) return;
+            if (!entity.Name.StartsWith("Drone_")) return;
 
-            foreach (var c in entity.Components)
+            var posComp = GetComponent(entity, ComponentTypes.COMPONENT_POSITION) as ComponentPosition;
+            var ai = GetComponent(entity, ComponentTypes.COMPONENT_DRONE_AI) as ComponentDroneAI;
+            if (posComp == null || ai == null) return;
+
+            Vector3 dronePos = posComp.Position;
+            Vector3 playerPos = scene.GetPlayerPos();
+
+            Vector3 targetPos = playerPos;
+
+            if (ai._mode == DroneMode.Patrol && ai.patrolPoints != null && ai.patrolPoints.Count > 0)
             {
-                if (c.ComponentType == ComponentTypes.COMPONENT_DRONE_AI) ai = (ComponentDroneAI)c;
-                if (c.ComponentType == ComponentTypes.COMPONENT_POSITION) pos = (ComponentPosition)c;
+                targetPos = ai.patrolPoints[ai.currentPatrolIndex];
+
+                float distToPlayer = (playerPos - dronePos).Length;
+                if (distToPlayer <= ai.chaseDistance)
+                {
+                    targetPos = playerPos;
+                }
             }
 
-            if (ai == null || pos == null) return;
+            Vector3 toTarget = targetPos - dronePos;
+            float dist = toTarget.Length;
 
-            Vector3 playerPos = game.GetPlayerPos();
-            Vector3 dronePos = pos.Position;
+            float stopDist = ai.StopDistance;
+            if (ai._mode == DroneMode.Patrol && targetPos != playerPos)
+                stopDist = ai.arriveDistance;
 
-            Vector3 toPlayer = playerPos - dronePos;
-            float _dist = toPlayer.Length;
+            if (dist <= stopDist)
+            {
+                if (ai._mode == DroneMode.Patrol && targetPos != playerPos && ai.patrolPoints.Count > 0)
+                {
+                    ai.currentPatrolIndex = (ai.currentPatrolIndex + 1) % ai.patrolPoints.Count;
+                }
+                return;
+            }
 
-            if (_dist < ai.StopDistance || _dist <= 0.0001f) return;
+            toTarget /= dist; 
+            float step = ai._Speed * GameScene.dt;
 
-            toPlayer.Normalize();
+            Vector3 delta = toTarget * step;
 
-            float move = ai._Speed * Scenes.GameScene.dt;
-            Vector3 delta = toPlayer * move;
+            Vector3 _fullMove = dronePos + delta;
+            float r = scene.DroneRadius;
 
-            Vector3 newPos = dronePos;
+            if (!scene.IsBlocked(_fullMove, r))
+            {
+                posComp.Position = _fullMove;
+                return;
+            }
 
-            Vector3 tryX = new Vector3(newPos.X + delta.X, newPos.Y, newPos.Z);
-            if (!game.IsBlocked(tryX)) newPos.X = tryX.X;
+            Vector3 tryX = new Vector3(dronePos.X + delta.X, dronePos.Y, dronePos.Z);
+            if (!scene.IsBlocked(tryX, r))
+            {
+                posComp.Position = tryX;
+                return;
+            }
 
-            Vector3 tryZ = new Vector3(newPos.X, newPos.Y, newPos.Z + delta.Z);
-            if (!game.IsBlocked(tryZ)) newPos.Z = tryZ.Z;
-
-            pos.Position = newPos;
+            Vector3 tryZ = new Vector3(dronePos.X, dronePos.Y, dronePos.Z + delta.Z);
+            if (!scene.IsBlocked(tryZ, r))
+            {
+                posComp.Position = tryZ;
+                return;
+            }
         }
     }
 }

@@ -78,7 +78,27 @@ namespace OpenGL_Game.Systems
 
                 IComponent positionComponent = GetComponent(entity, ComponentTypes.COMPONENT_POSITION);
                 Vector3 position = ((ComponentPosition)positionComponent).Position;
-                Matrix4 model = Matrix4.CreateTranslation(position);
+
+                float scaleValue = 1.0f;
+                float offsetValue = 0.0f;
+
+                var scaleComponent = entity.Components.Find(c => c.ComponentType == ComponentTypes.COMPONENT_SCALE) as ComponentScale;
+                if (scaleComponent != null)
+                {
+                    scaleValue = scaleComponent.Scale;
+                }
+
+                var offsetComponent = entity.Components.Find(c => c.ComponentType == ComponentTypes.COMPONENT_OFF_SET) as ComponentOffSet;
+                if (offsetComponent != null)
+                {
+                    offsetValue = offsetComponent.OffSet;
+                }
+                Vector3 finalPosition = new Vector3(position.X, position.Y + offsetValue, position.Z);
+
+                Matrix4 model = 
+                    Matrix4.CreateScale(scaleValue) *
+                    Matrix4.CreateTranslation(finalPosition);
+                //Matrix4 model = Matrix4.CreateTranslation(position);
 
                 Draw(model, geometry);
             }
